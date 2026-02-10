@@ -57,7 +57,7 @@ export default function Login() {
     >
       {/* Logolar Bölümü */}
       <div className="flex flex-col items-center mb-10 w-full max-w-sm text-center">
-        {/* Ana Şirket: Marmosium (Büyük ve Net) */}
+        {/* Ana Şirket: Marmosium*/}
         <img
           src="/Marmosium-logo.png"
           alt="Marmosium"
@@ -69,7 +69,7 @@ export default function Login() {
           }}
         />
 
-        {/* Bağlı Marka: Deconore (Daha Küçük ama TAM NET) */}
+        {/* Bağlı Marka: Deconore*/}
         <div className="flex items-center gap-3">
           <div
             style={{
@@ -82,7 +82,7 @@ export default function Login() {
           <img
             src="/Deconore-logo.png"
             alt="Deconore"
-            style={{ height: "35px", width: "auto", display: "block" }} // Opacity (solukluk) kaldırıldı
+            style={{ height: "35px", width: "auto", display: "block" }}
           />
           <div
             style={{

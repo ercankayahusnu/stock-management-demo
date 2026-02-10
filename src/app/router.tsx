@@ -2,8 +2,10 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 import Login from "../pages/Login";
 import ProductionPage from "../pages/ProductionPage";
 import SalesPage from "../pages/SalesPage";
-import AdminPanel from "../pages/AdminPanel"; // Yeni eklenen
-import SuperAdminPanel from "../pages/SuperAdminPanel"; // Yeni eklenen
+import AdminPanel from "../pages/AdminPanel";
+import SuperAdminPanel from "../pages/SuperAdminPanel";
+import Unauthorized from "../pages/Unauthorized";
+import ProtectedRoute from "../components/ProtectedRoute";
 
 export const router = createBrowserRouter([
   {
@@ -15,19 +17,39 @@ export const router = createBrowserRouter([
     element: <Login />,
   },
   {
+    path: "/unauthorized",
+    element: <Unauthorized />, // Yetkisiz erişim için özel sayfa
+  },
+  {
     path: "/production",
-    element: <ProductionPage />,
+    element: (
+      <ProtectedRoute requiredSlug="uretim">
+        <ProductionPage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/sales",
-    element: <SalesPage />,
+    element: (
+      <ProtectedRoute requiredSlug="satis">
+        <SalesPage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/admin-panel",
-    element: <AdminPanel />,
+    element: (
+      <ProtectedRoute requiredRole="admin">
+        <AdminPanel />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/super-admin",
-    element: <SuperAdminPanel />,
+    element: (
+      <ProtectedRoute requiredRole="superadmin">
+        <SuperAdminPanel />
+      </ProtectedRoute>
+    ),
   },
 ]);
