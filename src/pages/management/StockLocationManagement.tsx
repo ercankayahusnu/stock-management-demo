@@ -1,8 +1,8 @@
-export default function PersonnelManagement() {
+export default function StockLocationManagement() {
   return (
     <div className="p-8 border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/50 text-center">
       <h2 className="text-2xl font-bold text-slate-800 mb-2">
-        Personel Yönetimi
+        Stok Lokasyonu Yönetimi
       </h2>
       <p className="text-slate-500 font-medium">
         Bu modül şu anda geliştirme aşamasındadır.
