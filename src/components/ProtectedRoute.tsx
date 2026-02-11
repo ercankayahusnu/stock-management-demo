@@ -39,35 +39,25 @@ export default function ProtectedRoute({
     getProfile();
   }, []);
 
-  if (loading)
-    return <div style={{ padding: "20px" }}>Yetkiler kontrol ediliyor...</div>;
+  // 1. ADIM ÇÖZÜMÜ: Yazıyı kaldırdık, boş dönüyoruz.
+  // Böylece "Yetkiler..." yazısı görünüp kaybolarak sayfa titremesi yapmaz.
+  if (loading) return null;
 
   if (!userProfile) return <Navigate to="/login" replace />;
 
   const userSlug = userProfile.departman?.departman_slug;
   const userRole = userProfile.role;
 
-  console.log("--- GÜVENLİK KONTROLÜ ---");
-  console.log(
-    "Sayfa Ne İstiyor? -> Slug:",
-    requiredSlug,
-    "| Role:",
-    requiredRole,
-  );
-  console.log("Kullanıcıda Ne Var? -> Slug:", userSlug, "| Role:", userRole);
-
   // 1. Superadmin her zaman geçer
   if (userRole === "superadmin") return <>{children}</>;
 
   // 2. Rol uyuşmazlığı varsa engelle
   if (requiredRole && userRole !== requiredRole) {
-    console.warn("ERİŞİM REDDİ: Rol yetersiz!");
     return <Navigate to="/unauthorized" replace />;
   }
 
   // 3. Slug (Departman) uyuşmazlığı varsa engelle
   if (requiredSlug && userSlug !== requiredSlug) {
-    console.warn("ERİŞİM REDDİ: Yanlış departman!");
     return <Navigate to="/unauthorized" replace />;
   }
 
