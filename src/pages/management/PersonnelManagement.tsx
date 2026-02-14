@@ -286,13 +286,13 @@ export default function PersonnelManagement() {
         />
         <StatWidget
           icon={<CheckCircle2 size={24} />}
-          label="Aktif"
+          label="Aktif Personel"
           value={personnel.filter((p) => p.is_active).length}
           color="emerald"
         />
         <StatWidget
           icon={<Building2 size={24} />}
-          label="Bölümler"
+          label="Departman Sayısı"
           value={departments.length}
           color="purple"
         />
@@ -397,6 +397,7 @@ export default function PersonnelManagement() {
             <thead className="bg-slate-50/50 border-b border-slate-100 text-[11px] font-black text-slate-400 uppercase tracking-widest px-8">
               <tr>
                 <th className="px-8 py-5">Personel</th>
+                <th className="px-8 py-5 text-left">Departman</th>
                 <th className="px-8 py-5 text-center">İletişim</th>
                 <th className="px-8 py-5 text-center">Durum</th>
                 <th className="px-8 py-5 text-right">İşlemler</th>
@@ -424,6 +425,20 @@ export default function PersonnelManagement() {
                             {p.role}
                           </div>
                         </div>
+                      </div>
+                    </td>
+                    <td className="px-8 py-5">
+                      <div className="flex items-center gap-2">
+                        <div className="p-2 bg-purple-50 text-purple-600 rounded-lg shadow-sm">
+                          <Building2 size={16} />
+                        </div>
+                        <span className="font-bold text-slate-700 text-sm">
+                          {p.departman?.departman_name || (
+                            <span className="text-slate-400 italic">
+                              Atanmamış
+                            </span>
+                          )}
+                        </span>
                       </div>
                     </td>
                     <td className="px-8 py-5">
@@ -465,7 +480,7 @@ export default function PersonnelManagement() {
               ) : (
                 <tr>
                   <td
-                    colSpan={4}
+                    colSpan={5}
                     className="px-8 py-12 text-center text-slate-400"
                   >
                     <div className="flex flex-col items-center gap-3">

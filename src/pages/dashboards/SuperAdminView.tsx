@@ -1,6 +1,6 @@
-import { useState, cloneElement } from "react";
-import { useNavigate } from "react-router-dom"; // Çıkış sonrası yönlendirme için
-import { supabase } from "../../services/supabaseClient"; // Supabase bağlantısı için
+import { useState, useEffect, cloneElement } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "../../services/supabaseClient";
 import {
   Users,
   Briefcase,
@@ -13,6 +13,7 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
+  Loader2,
 } from "lucide-react";
 
 // Yönetim Sayfalarını Import Ediyoruz
@@ -23,7 +24,6 @@ import StockLocationManagement from "../management/StockLocationManagement";
 import SupplierManagement from "../management/SupplierManagement";
 import ReportManagement from "../management/ReportManagement";
 
-// Sayfa ID'leri için tip tanımı
 type TabId =
   | "home"
   | "personnel"
@@ -37,9 +37,71 @@ export default function SuperAdminView() {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  // Aktif sayfa durumu
   const [activeTab, setActiveTab] = useState<TabId>("home");
+
+  // --- İSTATİSTİK STATE'LERİ ---
+  const [stats, setStats] = useState({
+    personnel: { total: 0, active: 0 },
+    department: { total: 0 },
+    stock: { total: 0, active: 0 },
+    supplier: { total: 0, active: 0 }, // Tedarikçi eklendi
+  });
+  const [loadingStats, setLoadingStats] = useState(true);
+
+  // --- VERİ ÇEKME (ZIBAMM) ---
+  useEffect(() => {
+    fetchDashboardStats();
+  }, []);
+
+  async function fetchDashboardStats() {
+    try {
+      setLoadingStats(true);
+      // Tüm sorguları paralel atarak hızı koruyoruz
+      const [
+        pTotal,
+        pActive,
+        dTotal,
+        sLocTotal,
+        sLocActive,
+        supTotal,
+        supActive,
+      ] = await Promise.all([
+        // Personel Sayıları
+        supabase.from("personal").select("*", { count: "exact", head: true }),
+        supabase
+          .from("personal")
+          .select("*", { count: "exact", head: true })
+          .eq("is_active", true),
+        // Departman Sayısı
+        supabase.from("departman").select("*", { count: "exact", head: true }),
+        // Stok Lokasyon Sayıları
+        supabase
+          .from("stock_locations")
+          .select("*", { count: "exact", head: true }),
+        supabase
+          .from("stock_locations")
+          .select("*", { count: "exact", head: true })
+          .eq("is_active", true),
+        // Tedarikçi Sayıları (YENİ)
+        supabase.from("suppliers").select("*", { count: "exact", head: true }),
+        supabase
+          .from("suppliers")
+          .select("*", { count: "exact", head: true })
+          .eq("is_active", true),
+      ]);
+
+      setStats({
+        personnel: { total: pTotal.count || 0, active: pActive.count || 0 },
+        department: { total: dTotal.count || 0 },
+        stock: { total: sLocTotal.count || 0, active: sLocActive.count || 0 },
+        supplier: { total: supTotal.count || 0, active: supActive.count || 0 },
+      });
+    } catch (error) {
+      console.error("İstatistik hatası:", error);
+    } finally {
+      setLoadingStats(false);
+    }
+  }
 
   const navigation = [
     {
@@ -48,6 +110,18 @@ export default function SuperAdminView() {
       icon: <Users size={24} />,
       color: "bg-blue-500",
       desc: "Çalışan kayıtları ve yetki yönetimi",
+      stats: loadingStats ? (
+        <Loader2 size={16} className="animate-spin" />
+      ) : (
+        <div className="flex gap-2 mt-3">
+          <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded-md text-[10px] font-black border border-blue-100 uppercase">
+            Toplam: {stats.personnel.total}
+          </span>
+          <span className="bg-emerald-50 text-emerald-700 px-2 py-1 rounded-md text-[10px] font-black border border-emerald-100 uppercase">
+            Aktif: {stats.personnel.active}
+          </span>
+        </div>
+      ),
     },
     {
       title: "Departman",
@@ -55,6 +129,15 @@ export default function SuperAdminView() {
       icon: <Briefcase size={24} />,
       color: "bg-indigo-500",
       desc: "Bölüm bazlı organizasyon yapısı",
+      stats: loadingStats ? (
+        <Loader2 size={16} className="animate-spin" />
+      ) : (
+        <div className="flex gap-2 mt-3">
+          <span className="bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md text-[10px] font-black border border-indigo-100 uppercase">
+            Tanımlı Bölüm: {stats.department.total}
+          </span>
+        </div>
+      ),
     },
     {
       title: "Ürün",
@@ -69,6 +152,18 @@ export default function SuperAdminView() {
       icon: <MapPin size={24} />,
       color: "bg-emerald-500",
       desc: "Depo ve raf konumlandırma",
+      stats: loadingStats ? (
+        <Loader2 size={16} className="animate-spin" />
+      ) : (
+        <div className="flex gap-2 mt-3">
+          <span className="bg-emerald-50 text-emerald-700 px-2 py-1 rounded-md text-[10px] font-black border border-emerald-100 uppercase">
+            Toplam Alan: {stats.stock.total}
+          </span>
+          <span className="bg-slate-50 text-slate-700 px-2 py-1 rounded-md text-[10px] font-black border border-slate-100 uppercase">
+            Aktif: {stats.stock.active}
+          </span>
+        </div>
+      ),
     },
     {
       title: "Tedarikçi",
@@ -76,6 +171,18 @@ export default function SuperAdminView() {
       icon: <Truck size={24} />,
       color: "bg-amber-500",
       desc: "Tedarik zinciri ve firma rehberi",
+      stats: loadingStats ? (
+        <Loader2 size={16} className="animate-spin" />
+      ) : (
+        <div className="flex gap-2 mt-3">
+          <span className="bg-amber-50 text-amber-700 px-2 py-1 rounded-md text-[10px] font-black border border-amber-100 uppercase">
+            Firma: {stats.supplier.total}
+          </span>
+          <span className="bg-emerald-50 text-emerald-700 px-2 py-1 rounded-md text-[10px] font-black border border-emerald-100 uppercase">
+            Aktif: {stats.supplier.active}
+          </span>
+        </div>
+      ),
     },
     {
       title: "Raporlar",
@@ -86,13 +193,11 @@ export default function SuperAdminView() {
     },
   ];
 
-  // Navigasyon fonksiyonu
   const handleNavigate = (id: TabId) => {
     setActiveTab(id);
     setIsMobileMenuOpen(false);
   };
 
-  // Çıkış Yapma Fonksiyonu
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
@@ -102,7 +207,6 @@ export default function SuperAdminView() {
     }
   };
 
-  // Aktif başlığı getiren yardımcı fonksiyon
   const getActiveTitle = () => {
     const item = navigation.find((n) => n.id === activeTab);
     return item ? item.title : "Yönetim";
@@ -132,14 +236,13 @@ export default function SuperAdminView() {
             }`}
             onClick={() => setActiveTab("home")}
           >
-            <img
-              src="/marmo-deco.png"
-              alt="Marmosium Logo"
-              className={`w-full h-auto object-contain transition-all duration-300 ${
-                !isOpen ? "scale-[2.5]" : ""
-              }`}
-              style={{ filter: "brightness(0) invert(1)" }}
-            />
+            {isOpen ? (
+              <span className="text-xl font-black tracking-tighter text-white">
+                MARMOSIUM
+              </span>
+            ) : (
+              <span className="text-xl font-black text-white">M</span>
+            )}
           </div>
           <button
             onClick={() => setIsOpen(!isOpen)}
@@ -213,7 +316,7 @@ export default function SuperAdminView() {
                 <div
                   key={index}
                   onClick={() => handleNavigate(card.id)}
-                  className="group bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-500 cursor-pointer"
+                  className="group bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-500 cursor-pointer flex flex-col items-start h-full"
                 >
                   <div
                     className={`${card.color} w-14 h-14 rounded-2xl flex items-center justify-center text-white mb-6 shadow-lg shadow-current/20 group-hover:rotate-6 transition-all`}
@@ -223,9 +326,16 @@ export default function SuperAdminView() {
                   <h3 className="text-xl font-bold text-slate-800 mb-2">
                     {card.title}
                   </h3>
-                  <p className="text-slate-500 text-sm leading-relaxed">
+                  <p className="text-slate-500 text-sm leading-relaxed mb-auto">
                     {card.desc}
                   </p>
+
+                  {/* İSTATİSTİK BÖLÜMÜ */}
+                  {card.stats && (
+                    <div className="w-full pt-4 mt-2 border-t border-slate-50 animate-in fade-in slide-in-from-bottom-2">
+                      {card.stats}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
