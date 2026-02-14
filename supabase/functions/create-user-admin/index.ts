@@ -8,12 +8,9 @@ const corsHeaders = {
 }
 
 serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
-    // BURAYI DÜZELTTİK: SUPABASE_ prefixini sildik çünkü secret'ı SERVICE_ROLE_KEY olarak set ettik
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SERVICE_ROLE_KEY') ?? '' 
@@ -21,7 +18,7 @@ serve(async (req: Request) => {
 
     const { email, password, personal_data } = await req.json()
 
-    // 1. Auth tarafında kullanıcıyı oluştur
+    // 1. Auth tarafında kullanıcıyı oluştur (Güvenli Kasaya Koy)
     const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
@@ -30,16 +27,24 @@ serve(async (req: Request) => {
     
     if (authError) throw authError
 
-    // 2. Personal tablosuna kaydet
+    // 2. Personal tablosuna kayıt (Senin SQL şemana göre tek tek eşleme)
     const { error: personalError } = await supabaseAdmin
       .from('personal')
       .insert([{
-        ...personal_data,
+        personal_name: personal_data.personal_name,
+        personal_surname: personal_data.personal_surname,
+        personal_tel_no: personal_data.personal_tel_no,
         personal_mail: email,
-        auth_user_id: authUser.user.id
+        departman_id: personal_data.departman_id,
+        is_active: personal_data.is_active,
+        role: personal_data.role,
+        auth_user_id: authUser.user.id // Bağı kurduk!
       }])
 
-    if (personalError) throw personalError
+    if (personalError) {
+      await supabaseAdmin.auth.admin.deleteUser(authUser.user.id) // Hata olursa Auth'u temizle
+      throw personalError
+    }
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
